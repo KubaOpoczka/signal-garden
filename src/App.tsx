@@ -6,6 +6,7 @@ import {
   syntheticBands,
   type Bands,
 } from "./garden";
+import { audioFileValidationError } from "./audio-security";
 
 type SourceMode = "synthetic" | "microphone" | "file";
 
@@ -74,8 +75,9 @@ export function App() {
   };
 
   const useAudioFile = async (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      setNotice("That track is over 50 MB. Choose a smaller audio file.");
+    const validationError = audioFileValidationError(file);
+    if (validationError) {
+      setNotice(validationError);
       return;
     }
 
@@ -96,10 +98,11 @@ export function App() {
       source.start();
       audioSourceRef.current = source;
       analyserRef.current = analyser;
-      setAudioName(file.name);
+      const safeName = file.name.slice(0, 120) || "Local audio";
+      setAudioName(safeName);
       setMode("file");
       setRunning(true);
-      setNotice(`Growing from ${file.name}. The track stays on this device.`);
+      setNotice(`Growing from ${safeName}. The track stays on this device.`);
     } catch {
       stopAudio();
       setMode("synthetic");
@@ -179,15 +182,44 @@ export function App() {
   const exportFrame = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.toBlob((blob) => {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const exportContext = exportCanvas.getContext("2d");
+    if (!exportContext) return;
+    exportContext.drawImage(canvas, 0, 0);
+
+    const signature = "SIGNAL GARDEN / KubaOpoczka";
+    const fontSize = Math.max(18, Math.round(exportCanvas.width * 0.018));
+    const padding = Math.max(12, Math.round(fontSize * 0.7));
+    exportContext.font = `600 ${fontSize}px "IBM Plex Mono", monospace`;
+    const signatureWidth = exportContext.measureText(signature).width;
+    const plateWidth = signatureWidth + padding * 2;
+    const plateHeight = fontSize + padding * 1.6;
+    exportContext.fillStyle = "rgba(8, 12, 8, 0.82)";
+    exportContext.fillRect(
+      exportCanvas.width - plateWidth - padding,
+      exportCanvas.height - plateHeight - padding,
+      plateWidth,
+      plateHeight,
+    );
+    exportContext.fillStyle = "#d9ff4d";
+    exportContext.textBaseline = "middle";
+    exportContext.fillText(
+      signature,
+      exportCanvas.width - plateWidth,
+      exportCanvas.height - padding - plateHeight / 2,
+    );
+
+    exportCanvas.toBlob((blob) => {
       if (!blob) return;
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.href = url;
       link.download = `signal-garden-${seed}.png`;
       link.click();
-      URL.revokeObjectURL(url);
-      setNotice("Current garden exported as PNG");
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setNotice("Current garden exported with the KubaOpoczka signature");
     }, "image/png");
   };
 
@@ -214,7 +246,7 @@ export function App() {
           </span>
           <div>
             <strong>Signal Garden</strong>
-            <small>Audio-reactive growth instrument</small>
+            <small>Audio-reactive growth instrument · KubaOpoczka</small>
           </div>
         </div>
         <p className="privacy-note">

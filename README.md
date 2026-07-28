@@ -41,6 +41,10 @@ npm run build
 
 Production Lighthouse: **99 performance · 100 accessibility · 100 best practices · 100 SEO**.
 
+## Security and privacy
+
+Signal Garden is static and client-only. Microphone and track data stay in the browser, microphone tracks are stopped when the source changes, and local files are size- and type-checked before decoding. Production builds enforce a restrictive Content Security Policy, disable public source maps, and run tests, dependency auditing, and CodeQL in CI. See [SECURITY.md](./SECURITY.md) for reporting.
+
 ## Architecture
 
 `src/garden.ts` is a pure signal-to-geometry pipeline. `src/App.tsx` owns browser audio and the Canvas lifecycle. This split makes the mapping deterministic and testable without a browser audio device.
@@ -48,3 +52,7 @@ Production Lighthouse: **99 performance · 100 accessibility · 100 best practic
 ## Portfolio talking point
 
 The visual metaphor is not applied after signal processing. It is the signal-processing model: three frequency regions control three biologically legible properties of the rendered organism.
+
+## Authorship
+
+Original concept, design, and engineering by **Kuba Opoczka (KubaOpoczka)**. © 2026. Exported specimens carry the KubaOpoczka signature, and the MIT license requires this copyright notice to remain with substantial copies.
