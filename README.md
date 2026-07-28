@@ -2,7 +2,7 @@
 
 An audio-reactive generative instrument built with Web Audio, Canvas, React, and TypeScript.
 
-Signal Garden maps frequency roles to a polar growth system. Bass controls root mass, mid frequencies bend stems, and high frequencies open luminous tips. It can listen to a microphone locally or run from a deterministic synthetic tide, then export the current composition as a PNG.
+Signal Garden maps frequency roles to a polar growth system. Bass controls a root network, mid frequencies bend stems, and high frequencies open offshoots and leaf-like tips. It can listen to a microphone, play a local audio file, or run from a deterministic synthetic tide, then export the current composition as a PNG.
 
 ![Signal Garden audio-reactive instrument](./output/playwright/signal-garden-desktop.png)
 
@@ -13,7 +13,9 @@ Most audio visualizers decorate amplitude. Signal Garden uses a readable mapping
 ## Technical highlights
 
 - Web Audio `AnalyserNode` with frequency-band aggregation
+- Local audio-file decoding and looped playback with no upload
 - Deterministic generative geometry with reproducible seeds
+- Curved primary stems, high-frequency offshoots, bass roots, and an energy pulse
 - Device-pixel-ratio-aware Canvas renderer
 - `requestAnimationFrame` render loop with React state sampled at a lower frequency
 - Microphone privacy: the stream stays local and stops when the source changes
@@ -28,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Microphone access requires localhost or HTTPS. If permission is declined, the synthetic signal remains fully functional.
+Microphone access requires localhost or HTTPS. Local tracks are decoded in memory and never uploaded. If microphone permission is declined or a file cannot be decoded, the synthetic signal remains fully functional.
 
 ## Verify it
 
@@ -37,7 +39,7 @@ npm test
 npm run build
 ```
 
-Production Lighthouse: **99 performance · 100 accessibility · 100 best practices**.
+Production Lighthouse: **99 performance · 100 accessibility · 100 best practices · 100 SEO**.
 
 ## Architecture
 

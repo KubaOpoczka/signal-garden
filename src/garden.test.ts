@@ -11,13 +11,21 @@ describe("signal garden model", () => {
     expect(bands.bass).toBeGreaterThanOrEqual(0);
     expect(bands.highs).toBeLessThanOrEqual(1);
     expect(bands.energy).toBeLessThanOrEqual(1);
+
+    const fullScale = frequencyBands(new Uint8Array(128).fill(255));
+    expect(fullScale.bass).toBe(1);
+    expect(fullScale.mids).toBe(1);
+    expect(fullScale.highs).toBe(1);
+    expect(fullScale.energy).toBe(1);
   });
 
-  it("grows the same geometry from the same frame", () => {
+  it("grows deterministic stems, offshoots, and roots from the same frame", () => {
     const bands = syntheticBands(2000, 4);
     const first = growGarden(900, 600, bands, 4, 2000, 0.6);
     const second = growGarden(900, 600, bands, 4, 2000, 0.6);
     expect(first).toEqual(second);
-    expect(first.length).toBeGreaterThan(7);
+    expect(first.filter((branch) => branch.kind === "stem").length).toBeGreaterThan(7);
+    expect(first.some((branch) => branch.kind === "offshoot")).toBe(true);
+    expect(first.some((branch) => branch.kind === "root")).toBe(true);
   });
 });

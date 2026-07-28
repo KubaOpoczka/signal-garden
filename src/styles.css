@@ -78,7 +78,7 @@ a:focus-visible {
 .instrument {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: 70px minmax(620px, 1fr) auto;
+  grid-template-rows: 70px minmax(660px, 1fr) auto;
   color: var(--light);
   background: var(--void);
 }
@@ -205,12 +205,54 @@ h1 {
   max-width: 8ch;
   margin: 0;
   font-family: "Anybody", sans-serif;
-  font-size: clamp(4.4rem, 10vw, 8.8rem);
+  font-size: clamp(4.2rem, 8vw, 6rem);
   font-stretch: 85%;
   font-weight: 450;
   line-height: 0.78;
   letter-spacing: -0.04em;
   text-wrap: balance;
+}
+
+.source-plate {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: min(240px, 24vw);
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  transform: translateX(-50%);
+}
+
+.source-plate > span {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--growth);
+  box-shadow: 0 0 0 6px color-mix(in oklch, var(--growth) 14%, transparent);
+}
+
+.source-plate p,
+.source-plate strong {
+  display: block;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.55rem;
+}
+
+.source-plate p {
+  color: var(--muted);
+}
+
+.source-plate strong {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--growth);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .band-readout {
@@ -270,7 +312,7 @@ h1 {
 
 .control-deck {
   display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr 1.2fr;
+  grid-template-columns: 1.8fr 1fr 1fr 1.2fr;
   align-items: stretch;
   border-top: 1px solid var(--rule);
   background: var(--surface);
@@ -278,7 +320,7 @@ h1 {
 
 .control-deck > * {
   min-width: 0;
-  min-height: 110px;
+  min-height: 126px;
   padding: 18px 22px;
   border: 0;
   border-right: 1px solid var(--rule);
@@ -301,12 +343,23 @@ h1 {
   font-size: 0.57rem;
 }
 
-.source-picker button {
-  min-height: 34px;
+.source-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.source-picker button,
+.file-source {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
   padding: 0 8px;
   border: 1px solid var(--rule);
   background: transparent;
   font-size: 0.58rem;
+  line-height: 1.25;
+  text-align: center;
   cursor: pointer;
   transition:
     color var(--quick) var(--flow),
@@ -314,15 +367,33 @@ h1 {
     border-color var(--quick) var(--flow);
 }
 
-.source-picker button + button {
-  margin-left: 5px;
+.file-source {
+  position: relative;
+}
+
+.file-source input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .source-picker button:hover,
-.source-picker button.active {
+.source-picker button.active,
+.file-source:hover,
+.file-source.active {
   color: var(--void);
   border-color: var(--growth);
   background: var(--growth);
+}
+
+.file-source:focus-within {
+  outline: 3px solid var(--growth);
+  outline-offset: 4px;
 }
 
 .range-control output {
@@ -349,7 +420,7 @@ input[type="range"] {
 }
 
 .transport button {
-  min-height: 110px;
+  min-height: 126px;
   padding: 14px;
   border: 0;
   background: transparent;
@@ -411,7 +482,7 @@ input[type="range"] {
   }
 
   .instrument {
-    grid-template-rows: 70px minmax(600px, 1fr) auto;
+    grid-template-rows: 70px minmax(640px, 1fr) auto;
   }
 
   .title-stack {
@@ -419,7 +490,14 @@ input[type="range"] {
   }
 
   h1 {
-    font-size: clamp(4rem, 17vw, 7rem);
+    font-size: clamp(3.8rem, 14vw, 5.8rem);
+  }
+
+  .source-plate {
+    top: 38%;
+    left: 20px;
+    width: 220px;
+    transform: none;
   }
 
   .band-readout {
@@ -468,17 +546,27 @@ input[type="range"] {
   }
 
   .control-deck > * {
-    min-height: 96px;
+    min-height: 112px;
     border-right: 0;
   }
 
   .transport button {
-    min-height: 96px;
+    min-height: 112px;
+  }
+
+  .source-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .source-picker {
+    min-height: 206px;
   }
 
   .notice {
-    right: 12px;
-    bottom: 12px;
+    position: static;
+    right: auto;
+    bottom: auto;
+    max-width: none;
   }
 }
 

@@ -7,7 +7,7 @@ import {
   type Bands,
 } from "./garden";
 
-type SourceMode = "synthetic" | "microphone";
+type SourceMode = "synthetic" | "microphone" | "file";
 
 const INITIAL_BANDS: Bands = { bass: 0.42, mids: 0.46, highs: 0.3, energy: 0.49 };
 
@@ -15,8 +15,10 @@ export function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const microphoneStreamRef = useRef<MediaStream | null>(null);
   const [mode, setMode] = useState<SourceMode>("synthetic");
+  const [audioName, setAudioName] = useState("");
   const [running, setRunning] = useState(true);
   const [complexity, setComplexity] = useState(0.64);
   const [sensitivity, setSensitivity] = useState(1);
@@ -30,34 +32,78 @@ export function App() {
     stateRef.current = { mode, running, complexity, sensitivity, seed };
   }, [mode, running, complexity, sensitivity, seed]);
 
-  const stopMicrophone = useCallback(() => {
+  const stopAudio = useCallback(() => {
     microphoneStreamRef.current?.getTracks().forEach((track) => track.stop());
     microphoneStreamRef.current = null;
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.stop();
+      } catch {
+        // The source may have already ended.
+      }
+      audioSourceRef.current.disconnect();
+      audioSourceRef.current = null;
+    }
     analyserRef.current = null;
     void audioContextRef.current?.close();
     audioContextRef.current = null;
   }, []);
 
-  useEffect(() => stopMicrophone, [stopMicrophone]);
+  useEffect(() => stopAudio, [stopAudio]);
 
   const useMicrophone = async () => {
     try {
-      stopMicrophone();
+      stopAudio();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const context = new AudioContext();
+      audioContextRef.current = context;
       const analyser = context.createAnalyser();
       analyser.fftSize = 512;
       analyser.smoothingTimeConstant = 0.82;
       context.createMediaStreamSource(stream).connect(analyser);
       microphoneStreamRef.current = stream;
-      audioContextRef.current = context;
       analyserRef.current = analyser;
       setMode("microphone");
       setRunning(true);
       setNotice("Microphone connected. Nothing is recorded or uploaded.");
     } catch {
+      stopAudio();
       setMode("synthetic");
       setNotice("Microphone unavailable. Synthetic tide is still running.");
+    }
+  };
+
+  const useAudioFile = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      setNotice("That track is over 50 MB. Choose a smaller audio file.");
+      return;
+    }
+
+    try {
+      stopAudio();
+      const context = new AudioContext();
+      audioContextRef.current = context;
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.82;
+      const audioBuffer = await context.decodeAudioData(await file.arrayBuffer());
+      const source = context.createBufferSource();
+      source.buffer = audioBuffer;
+      source.loop = true;
+      source.connect(analyser);
+      analyser.connect(context.destination);
+      await context.resume();
+      source.start();
+      audioSourceRef.current = source;
+      analyserRef.current = analyser;
+      setAudioName(file.name);
+      setMode("file");
+      setRunning(true);
+      setNotice(`Growing from ${file.name}. The track stays on this device.`);
+    } catch {
+      stopAudio();
+      setMode("synthetic");
+      setNotice("That audio file could not be decoded. Synthetic tide is still running.");
     }
   };
 
@@ -86,7 +132,7 @@ export function App() {
       const current = stateRef.current;
       let nextBands = bandsRef.current;
       if (current.running) {
-        if (current.mode === "microphone" && analyserRef.current) {
+        if (current.mode !== "synthetic" && analyserRef.current) {
           analyserRef.current.getByteFrequencyData(frequencyData);
           nextBands = frequencyBands(frequencyData);
         } else {
@@ -109,7 +155,14 @@ export function App() {
         current.complexity,
         reduceMotion || !current.running,
       );
-      drawGarden(context, rect.width, rect.height, branches, nextBands);
+      drawGarden(
+        context,
+        rect.width,
+        rect.height,
+        branches,
+        nextBands,
+        reduceMotion || !current.running ? 0 : time,
+      );
 
       if (time - lastSummary > 300) {
         bandsRef.current = nextBands;
@@ -139,11 +192,14 @@ export function App() {
   };
 
   const chooseSynthetic = () => {
-    stopMicrophone();
+    stopAudio();
     setMode("synthetic");
     setRunning(true);
     setNotice("Synthetic tide is growing");
   };
+
+  const sourceLabel =
+    mode === "microphone" ? "Live microphone" : mode === "file" ? audioName : "Synthetic tide";
 
   return (
     <main className="instrument">
@@ -181,6 +237,12 @@ export function App() {
 
         <canvas ref={canvasRef} aria-hidden="true" />
 
+        <div className="source-plate">
+          <span aria-hidden="true" />
+          <p>Listening to</p>
+          <strong title={sourceLabel}>{sourceLabel}</strong>
+        </div>
+
         <div className="band-readout" aria-label="Current frequency levels">
           <div>
             <span>Bass / roots</span>
@@ -216,20 +278,35 @@ export function App() {
       <section id="controls" className="control-deck" aria-label="Signal Garden controls">
         <fieldset className="source-picker">
           <legend>Signal source</legend>
-          <button
-            aria-pressed={mode === "synthetic"}
-            className={mode === "synthetic" ? "active" : ""}
-            onClick={chooseSynthetic}
-          >
-            Synthetic tide
-          </button>
-          <button
-            aria-pressed={mode === "microphone"}
-            className={mode === "microphone" ? "active" : ""}
-            onClick={() => void useMicrophone()}
-          >
-            Live microphone
-          </button>
+          <div className="source-actions">
+            <button
+              aria-pressed={mode === "synthetic"}
+              className={mode === "synthetic" ? "active" : ""}
+              onClick={chooseSynthetic}
+            >
+              Synthetic tide
+            </button>
+            <button
+              aria-pressed={mode === "microphone"}
+              className={mode === "microphone" ? "active" : ""}
+              onClick={() => void useMicrophone()}
+            >
+              Live microphone
+            </button>
+            <label className={mode === "file" ? "file-source active" : "file-source"}>
+              <input
+                type="file"
+                name="audio-file"
+                accept="audio/*"
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  if (file) void useAudioFile(file).finally(() => (input.value = ""));
+                }}
+              />
+              Choose a track
+            </label>
+          </div>
         </fieldset>
 
         <label className="range-control">
@@ -269,8 +346,10 @@ export function App() {
             className="pause"
             aria-pressed={!running}
             onClick={() => {
-              setRunning((current) => !current);
-              setNotice(running ? "Growth paused" : "Growth resumed");
+              setRunning((current) => {
+                setNotice(current ? "Growth paused" : "Growth resumed");
+                return !current;
+              });
             }}
           >
             <span aria-hidden="true">{running ? "Ⅱ" : "▶"}</span>
