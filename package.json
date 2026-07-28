@@ -12,8 +12,8 @@
   },
   "author": "Kuba Opoczka (KubaOpoczka)",
   "license": "MIT",
-  "repository": "https://github.com/SmellyBricc/signal-garden",
-  "homepage": "https://smellybricc.github.io/signal-garden/",
+  "repository": "https://github.com/KubaOpoczka/signal-garden",
+  "homepage": "https://kubaopoczka.github.io/signal-garden/",
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
